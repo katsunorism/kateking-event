@@ -119,11 +119,21 @@
 
     function formatDate(val) {
       if (!val) return '';
-      if (typeof val === 'string' && val.includes('Date')) {
-        const parts = val.match(/\d+/g);
+      const str = String(val);
+
+      // ① Googleの内部Date形式 "Date(2026,4,23)" の場合
+      if (str.includes('Date')) {
+        const parts = str.match(/\d+/g);
         return `${parts[0]}-${pad(parseInt(parts[1])+1)}-${pad(parts[2])}`;
       }
-      return val;
+
+      // ② 日本語混じりの文字列 "2026年5月23日(土)..." の場合（追加）
+      const jpMatch = str.match(/(\d{4})[年/-](\d{1,2})[月/-](\d{1,2})/);
+      if (jpMatch) {
+        return `${jpMatch[1]}-${pad(jpMatch[2])}-${pad(jpMatch[3])}`;
+      }
+
+      return str;
     }
 
     function filterAndRender() {
