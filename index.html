@@ -106,23 +106,21 @@
     function parseSheetData(table) {
       if (!table || !table.rows) return [];
       return table.rows.map(row => {
-        // D列(row.c[3])から日付と時刻を分離して抽出
-        const rawDateTime = row.c[3] ? row.c[3].f || String(row.c[3].v) : '';
+        const rawDateTime = row.c[4] ? row.c[4].f || String(row.c[4].v) : '';
         const parsed = parseDateTime(rawDateTime);
-
         return {
-          timestamp: row.c[0] ? row.c[0].v : '',
-          registrant: row.c[1] ? (row.c[1].v || '') : '', 
-          title: row.c[2] ? (row.c[2].v || '') : '',      
-          dateKey: parsed.date,    // 抽出した日付
-          startTime: parsed.time,  // 抽出した時刻
-          location: row.c[5] ? (row.c[5].v || '') : '',   
-          url: row.c[6] ? (row.c[6].v || '') : '',        
-          description: row.c[7] ? (row.c[7].v || '') : '' 
+          timestamp:   row.c[0] ? row.c[0].v : '',
+          registrant:  row.c[2] ? (row.c[2].v || '') : '',  // C列：投稿者名
+          title:       row.c[3] ? (row.c[3].v || '') : '',  // D列：イベント名称
+          dateKey:     parsed.date,
+          startTime:   parsed.time,
+          location:    row.c[5] ? (row.c[5].v || '') : '',  // F列：場所
+          description: row.c[6] ? (row.c[6].v || '') : '',  // G列：詳細説明
+          url:         row.c[7] ? (row.c[7].v || '') : ''   // H列：URL
         };
       });
     }
-
+    
     // 文字列から日付(YYYY-MM-DD)と時刻(HH:mm)を抽出する
     function parseDateTime(str) {
       let date = '';
