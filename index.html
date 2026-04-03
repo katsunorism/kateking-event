@@ -4,7 +4,7 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>【カテキンコミュニティ】イベント一覧</title>
+  <title>【カテコミュ】イベント一覧</title>
   <style>
     :root { --primary-color: #004bb1; --accent-color: #ff9800; --bg-color: #f4f7f9; }
     body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; background: var(--bg-color); margin: 0; padding: 10px; color: #333; }
@@ -46,7 +46,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>【カテキンコミュニティ】イベント一覧</h1>
+    <h1>【カテコミュ】イベント一覧</h1>
     <div class="month-nav">
       <button id="btn-prev">◀ 前月</button>
       <span id="month-label"></span>
@@ -105,35 +105,45 @@
 
     function parseSheetData(table) {
       if (!table || !table.rows) return [];
-      return table.rows.map(row => ({
-        timestamp: row.c[0] ? row.c[0].v : '',
-        registrant: row.c[1] ? (row.c[1].v || '') : '', 
-        title: row.c[2] ? (row.c[2].v || '') : '',      
-        dateKey: row.c[3] ? formatDate(row.c[3].v) : '', 
-        startTime: row.c[4] ? (row.c[4].v || '終日') : '終日', 
-        location: row.c[5] ? (row.c[5].v || '') : '',   
-        url: row.c[6] ? (row.c[6].v || '') : '',        
-        description: row.c[7] ? (row.c[7].v || '') : '' 
-      }));
+      return table.rows.map(row => {
+        // D列(row.c[3])から日付と時刻を分離して抽出
+        const rawDateTime = row.c[3] ? row.c[3].f || String(row.c[3].v) : '';
+        const parsed = parseDateTime(rawDateTime);
+
+        return {
+          timestamp: row.c[0] ? row.c[0].v : '',
+          registrant: row.c[1] ? (row.c[1].v || '') : '', 
+          title: row.c[2] ? (row.c[2].v || '') : '',      
+          dateKey: parsed.date,    // 抽出した日付
+          startTime: parsed.time,  // 抽出した時刻
+          location: row.c[5] ? (row.c[5].v || '') : '',   
+          url: row.c[6] ? (row.c[6].v || '') : '',        
+          description: row.c[7] ? (row.c[7].v || '') : '' 
+        };
+      });
     }
 
-    function formatDate(val) {
-      if (!val) return '';
-      const str = String(val);
+    // 文字列から日付(YYYY-MM-DD)と時刻(HH:mm)を抽出する
+    function parseDateTime(str) {
+      let date = '';
+      let time = '終日';
 
-      // ① Googleの内部Date形式 "Date(2026,4,23)" の場合
-      if (str.includes('Date')) {
-        const parts = str.match(/\d+/g);
-        return `${parts[0]}-${pad(parseInt(parts[1])+1)}-${pad(parts[2])}`;
+      // 1. 日付の抽出 (YYYY/MM/DD or YYYY年MM月DD日)
+      const dateMatch = str.match(/(\d{4})[年/-](\d{1,2})[月/-](\d{1,2})/);
+      if (dateMatch) {
+        date = `${dateMatch[1]}-${pad(dateMatch[2])}-${pad(dateMatch[3])}`;
+      } else if (str.includes('Date')) { // GoogleのDate形式
+        const p = str.match(/\d+/g);
+        date = `${p[0]}-${pad(parseInt(p[1])+1)}-${pad(p[2])}`;
       }
 
-      // ② 日本語混じりの文字列 "2026年5月23日(土)..." の場合（追加）
-      const jpMatch = str.match(/(\d{4})[年/-](\d{1,2})[月/-](\d{1,2})/);
-      if (jpMatch) {
-        return `${jpMatch[1]}-${pad(jpMatch[2])}-${pad(jpMatch[3])}`;
+      // 2. 時刻の抽出 (HH:mm)
+      const timeMatch = str.match(/(\d{1,2}):(\d{2})/);
+      if (timeMatch) {
+        time = `${pad(timeMatch[1])}:${timeMatch[2]}`;
       }
 
-      return str;
+      return { date: date, time: time };
     }
 
     function filterAndRender() {
